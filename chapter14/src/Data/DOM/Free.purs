@@ -4,12 +4,12 @@ module Data.DOM.Free
   , Content()
   , ContentF()
   , AttributeKey()
-  , IsValue
+  , class IsValue
   , toValue
 
   , a
   , p
-  , img 
+  , img
 
   , href
   , _class
@@ -17,21 +17,20 @@ module Data.DOM.Free
   , width
   , height
 
-  , (:=)
+  , attribute, (:=)
   , text
   , elem
-  
+
   , render
   ) where
 
 import Prelude
 
-import Data.Maybe
+import Control.Monad.Free (Free, runFreeM, liftF)
+import Control.Monad.Writer (Writer, execWriter)
+import Control.Monad.Writer.Class (tell)
 import Data.Foldable (for_)
-
-import Control.Monad.Free
-import Control.Monad.Writer
-import Control.Monad.Writer.Class
+import Data.Maybe (Maybe(..))
 
 newtype Element = Element
   { name         :: String
@@ -44,13 +43,13 @@ data ContentF a
   | ElementContent Element a
 
 instance functorContentF :: Functor ContentF where
-  map f (TextContent s a) = TextContent s (f a)
-  map f (ElementContent e a) = ElementContent e (f a)
+  map f (TextContent s x) = TextContent s (f x)
+  map f (ElementContent e x) = ElementContent e (f x)
 
 type Content = Free ContentF
 
 newtype Attribute = Attribute
-  { key          :: String 
+  { key          :: String
   , value        :: String
   }
 
@@ -74,18 +73,20 @@ class IsValue a where
 
 instance stringIsValue :: IsValue String where
   toValue = id
- 
+
 instance intIsValue :: IsValue Int where
   toValue = show
- 
+
 instance numberIsValue :: IsValue Number where
   toValue = show
 
-(:=) :: forall a. (IsValue a) => AttributeKey a -> a -> Attribute
-(:=) (AttributeKey key) value = Attribute
+attribute :: forall a. IsValue a => AttributeKey a -> a -> Attribute
+attribute (AttributeKey key) value = Attribute
   { key: key
   , value: toValue value
   }
+
+infix 4 attribute as :=
 
 a :: Array Attribute -> Content Unit -> Element
 a attribs content = element "a" attribs (Just content)
@@ -118,19 +119,19 @@ render e = execWriter $ renderElement e
   renderElement (Element e) = do
     tell "<"
     tell e.name
-    for_ e.attribs $ \a -> do
+    for_ e.attribs $ \x -> do
       tell " "
-      renderAttribute a
+      renderAttribute x
     renderContent e.content
-    
+
     where
     renderAttribute :: Attribute -> Writer String Unit
-    renderAttribute (Attribute a) = do
-      tell a.key
+    renderAttribute (Attribute x) = do
+      tell x.key
       tell "=\""
-      tell a.value
+      tell x.value
       tell "\""
-    
+
     renderContent :: Maybe (Content Unit) -> Writer String Unit
     renderContent Nothing = tell " />"
     renderContent (Just content) = do
@@ -143,8 +144,7 @@ render e = execWriter $ renderElement e
     renderContentItem :: forall a. ContentF (Content a) -> Writer String (Content a)
     renderContentItem (TextContent s rest) = do
       tell s
-      return rest
+      pure rest
     renderContentItem (ElementContent e rest) = do
       renderElement e
-      return rest
-
+      pure rest

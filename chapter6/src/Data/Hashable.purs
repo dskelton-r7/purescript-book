@@ -1,23 +1,22 @@
-module Data.Hashable 
-  ( HashCode()
+module Data.Hashable
+  ( HashCode
   , hashCode
 
-  , Hashable
+  , class Hashable
   , hash
   , hashEqual
   ) where
 
-import Prelude 
+import Prelude
 
-import Data.Maybe
-import Data.Tuple
-import Data.Either
-import Data.String
-import Data.Function (on)
+import Data.Char (toCharCode)
+import Data.Either (Either(..))
 import Data.Foldable (foldMap)
-import Data.Monoid (Monoid)
-
-import qualified Data.Char as C
+import Data.Function (on)
+import Data.Maybe (Maybe(..))
+import Data.Monoid (class Monoid)
+import Data.String (toCharArray)
+import Data.Tuple (Tuple(..))
 
 newtype HashCode = HashCode Int
 
@@ -28,7 +27,7 @@ class (Eq a) <= Hashable a where
   hash :: a -> HashCode
 
 instance showHashCode :: Show HashCode where
-  show (HashCode h) = "(HashCode " ++ show h ++ ")"
+  show (HashCode h) = "(HashCode " <> show h <> ")"
 
 instance eqHashCode :: Eq HashCode where
   eq (HashCode h1) (HashCode h2) = h1 == h2
@@ -39,11 +38,11 @@ instance semigroupHashCode :: Semigroup HashCode where
 instance monoidHashCode :: Monoid HashCode where
   mempty = hashCode 0
 
-hashEqual :: forall a. (Hashable a) => a -> a -> Boolean
+hashEqual :: forall a. Hashable a => a -> a -> Boolean
 hashEqual = eq `on` hash
 
 instance hashChar :: Hashable Char where
-  hash = hash <<< C.toCharCode
+  hash = hash <<< toCharCode
 
 instance hashString :: Hashable String where
   hash = hash <<< toCharArray
@@ -55,10 +54,10 @@ instance hashBoolean :: Hashable Boolean where
   hash false = hashCode 0
   hash true  = hashCode 1
 
-instance hashArray :: (Hashable a) => Hashable (Array a) where
+instance hashArray :: Hashable a => Hashable (Array a) where
   hash = foldMap hash
 
-instance hashMaybe :: (Hashable a) => Hashable (Maybe a) where
+instance hashMaybe :: Hashable a => Hashable (Maybe a) where
   hash Nothing = hashCode 0
   hash (Just a) = hashCode 1 <> hash a
 
