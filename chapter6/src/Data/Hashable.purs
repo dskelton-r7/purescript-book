@@ -5,23 +5,23 @@ module Data.Hashable
   , class Hashable
   , hash
   , hashEqual
+  , combineHashes
   ) where
 
 import Prelude
 
 import Data.Char (toCharCode)
 import Data.Either (Either(..))
-import Data.Foldable (foldMap)
+import Data.Foldable (foldl)
 import Data.Function (on)
 import Data.Maybe (Maybe(..))
-import Data.Monoid (class Monoid)
 import Data.String (toCharArray)
 import Data.Tuple (Tuple(..))
 
 newtype HashCode = HashCode Int
 
 hashCode :: Int -> HashCode
-hashCode h = HashCode (h `mod` 65536)
+hashCode h = HashCode (h `mod` 65535)
 
 class (Eq a) <= Hashable a where
   hash :: a -> HashCode
@@ -32,11 +32,8 @@ instance showHashCode :: Show HashCode where
 instance eqHashCode :: Eq HashCode where
   eq (HashCode h1) (HashCode h2) = h1 == h2
 
-instance semigroupHashCode :: Semigroup HashCode where
-  append (HashCode h1) (HashCode h2) = hashCode (73 * h1 + 51 * h2)
-
-instance monoidHashCode :: Monoid HashCode where
-  mempty = hashCode 0
+combineHashes :: HashCode -> HashCode -> HashCode
+combineHashes (HashCode h1) (HashCode h2) = hashCode (73 * h1 + 51 * h2)
 
 hashEqual :: forall a. Hashable a => a -> a -> Boolean
 hashEqual = eq `on` hash
@@ -55,15 +52,15 @@ instance hashBoolean :: Hashable Boolean where
   hash true  = hashCode 1
 
 instance hashArray :: Hashable a => Hashable (Array a) where
-  hash = foldMap hash
+  hash = foldl combineHashes (hashCode 0) <<< map hash
 
 instance hashMaybe :: Hashable a => Hashable (Maybe a) where
   hash Nothing = hashCode 0
-  hash (Just a) = hashCode 1 <> hash a
+  hash (Just a) = hashCode 1 `combineHashes` hash a
 
 instance hashTuple :: (Hashable a, Hashable b) => Hashable (Tuple a b) where
-  hash (Tuple a b) = hash a <> hash b
+  hash (Tuple a b) = hash a `combineHashes` hash b
 
 instance hashEither :: (Hashable a, Hashable b) => Hashable (Either a b) where
-  hash (Left a) = hashCode 0 <> hash a
-  hash (Right b) = hashCode 1 <> hash b
+  hash (Left a) = hashCode 0 `combineHashes` hash a
+  hash (Right b) = hashCode 1 `combineHashes` hash b
