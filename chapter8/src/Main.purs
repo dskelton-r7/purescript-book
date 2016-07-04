@@ -52,9 +52,7 @@ updateAppState
          , state :: ReactState ReadWrite
          | eff
          ) Unit
-updateAppState ctx update e = do
-  val <- readState ctx
-
+updateAppState ctx update e =
   for_ (valueOf e) \s -> do
     let newPerson = update s
 
