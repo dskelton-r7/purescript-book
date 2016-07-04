@@ -10,9 +10,12 @@ import Graphics.Canvas (CANVAS, closePath, lineTo, moveTo, fillPath,
 import Math as Math
 import Partial.Unsafe (unsafePartial)
 
-translate :: forall r. Number -> Number ->
-              { x :: Number, y :: Number | r } ->
-              { x :: Number, y :: Number | r }
+translate
+  :: forall r
+   . Number
+  -> Number
+  -> { x :: Number, y :: Number | r }
+  -> { x :: Number, y :: Number | r }
 translate dx dy shape = shape
   { x = shape.x + dx
   , y = shape.y + dy

@@ -49,11 +49,11 @@ main = void $ unsafePartial do
     interpret state L = pure $ state { theta = state.theta - Math.pi / 3.0 }
     interpret state R = pure $ state { theta = state.theta + Math.pi / 3.0 }
     interpret state F = do
-      let x' = state.x + Math.cos state.theta * 1.5
-          y' = state.y + Math.sin state.theta * 1.5
+      let x = state.x + Math.cos state.theta * 1.5
+          y = state.y + Math.sin state.theta * 1.5
       moveTo ctx state.x state.y
-      lineTo ctx x' y'
-      pure { x: x', y: y', theta: state.theta }
+      lineTo ctx x y
+      pure { x, y, theta: state.theta }
 
     initialState :: State
     initialState = { x: 120.0, y: 200.0, theta: 0.0 }

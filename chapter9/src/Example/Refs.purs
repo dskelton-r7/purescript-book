@@ -6,9 +6,9 @@ import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.DOM (addEventListener, querySelector)
 import Control.Monad.Eff.Ref (REF, readRef, modifyRef, newRef)
+import Data.Foldable (for_)
 import Data.Int (toNumber)
 import Data.Maybe (Maybe(..))
-import Data.Traversable (for)
 import DOM (DOM)
 import Graphics.Canvas (Context2D, CANVAS, getContext2D, getCanvasElementById,
                         rect, fillPath, translate, scale, rotate, withContext,
@@ -29,7 +29,7 @@ render count ctx = do
 
   setFillStyle "#00FF00" ctx
 
-  withContext ctx $ do
+  withContext ctx do
     let scaleX = Math.sin (toNumber count * Math.pi / 4.0) + 1.5
     let scaleY = Math.sin (toNumber count * Math.pi / 6.0) + 1.5
 
@@ -59,8 +59,8 @@ main = void $ unsafePartial do
   render 0 ctx
 
   node <- querySelector "#canvas"
-  for node $ addEventListener "click" $ void do
+  for_ node $ addEventListener "click" $ void do
     log "Mouse clicked!"
-    modifyRef clickCount (\count -> count + 1)
+    modifyRef clickCount \count -> count + 1
     count <- readRef clickCount
     render count ctx
